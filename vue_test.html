@@ -11,16 +11,23 @@
       el: '#vue_example',
 
       template: `<div>
-    <p>{{ message }}</p>
-    <input v-model="message" />
-    <button v-on:click="reverse()">Reverse</button>
-    </div>`,
+        <p>{{ message }}</p>
+        <input v-model="message" />
+        <button v-on:click="reverse()">Reverse</button>
+        <p>{{ json }}</p>
+        <input v-model="json" />
+        <button v-on:click="show()">Show</button>
+        </div>`,
 
       data: {
         message: 'Hello Vue.js!',
+        json: {"a": "ab"},
       },
 
       methods: {
+        show: function () {
+          this.$set(this.json,"ひらがな","漢字")
+        },
         reverse: function () {
           this.message = this.message.split('').reverse().join('')
         },
