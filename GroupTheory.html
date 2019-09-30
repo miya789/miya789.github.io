@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <script type="text/javascript"
+    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.22/vue.min.js'></script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      TeX: { equationNumbers: { autoNumber: "AMS" }},
+      tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+        processEscapes: true
+      },
+      "HTML-CSS": { matchFontHeight: false },
+      displayAlign: "left",
+      displayIndent: "2em"
+    });
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+
+<body>
+  <h1>自分用</h1>
+
+  $ae=ea=a for \forall a \in G$
+  <ul id="vue_app">
+    <li v-for="item in items">
+      {{ item.message }}
+    </li>
+  </ul>
+  <div id="vue_mathjax"></div>
+
+  <script>
+    var vue_mathjax = new Vue({
+      el: 'vue_mathjax',
+      template: `
+        <div>
+        <textarea v-model="formula" cols="30" rows="10"></textarea>
+          <vue-mathjax :formula="formula"></vue-mathjax>
+        </div>
+      `,
+      //< !--You can also define globally -- >
+      methods: {
+        a() {
+          import { VueMathjax } from 'vue-mathjax'
+          export default {
+            components: {
+              'vue-mathjax': VueMathjax
+            },
+            name: 'HelloWorld',
+            data() {
+              return {
+                formula: '$$x = {-b \\pm \\sqrt{b^2-4ac} \\over 2a}.$$',
+                msg: 'Welcome to Your Vue.js App'
+              }
+            }
+          }
+        }
+      }
+    })
+
+    var vue_example = new Vue({
+      el: '#vue_app',
+
+      // template: `
+      //   <div>
+      //     <p>{{ message }}</p>
+      //   </div>`,
+
+      data: {
+        items: [
+          { message: 'ae=ea=a \geq forall a \in G' },
+          { message: '$(ae=ea=a for \forall a \omega \in G^2$)' },
+          { message: '\[ae=ea=a for \forall a \in G\]' },
+          { message: "$\displaystyle\binom{n}{n-k}=\frac{n!}{(n-k)!\times k!}\cdots \# \$ \% \& \_ \{ \} \verb|\| \verb|^| \verb|~| \verb|<| \verb|>| \verb+|+$" },
+        ]
+      },
+      methods: {
+        renderMathJax() {
+          console.log("aaaaaa")
+          if (window.MathJax) {
+            window.MathJax.Hub.Config({
+              tex2jax: {
+                inlineMath: [['$', '$'], ["\(", "\)"]],
+                displayMath: [['$$', '$$'], ["\[", "\]"]],
+                processEscapes: true,
+                processEnvironments: true
+              },
+              // Center justify equations in code and markdown cells. Elsewhere
+              // we use CSS to left justify single line equations in code cells.
+              displayAlign: 'center',
+              "HTML-CSS": {
+                styles: { '.MathJax_Display': { "margin": 0 } },
+                linebreaks: { automatic: true }
+              }
+            });
+            window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub, this.$refs.mathJaxEl]);
+          }
+        }
+      },
+
+      head: {
+        script: [
+          { src: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS_HTML' }
+        ]
+      },
+
+      mounted() {
+        this.renderMathJax()
+      }
+    })
+  </script>
+</body>
