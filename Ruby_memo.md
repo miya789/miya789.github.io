@@ -3,6 +3,10 @@
   - [] 全て[1]
 - 参考
   1. [Ruby基礎文法](https://qiita.com/Fendo181/items/eb2cb17f32d99aa01f59)
+- Rubyにはスコープが無い
+- nil に初期化される
+  1. [if文でのローカル変数の初期化のされ方について](https://teratail.com/questions/20329)
+
 
 # ClassMethod
 - 不明
@@ -45,6 +49,11 @@
 
 - 二重ループ回避
   - `zip`
+
+- インスタンス変数
+      失敗例 `@blank_pages = v.nil? ? 0 : v.select(&:blank?).length`
+      成功例 `self.send("blank_pages=", codes.nil? ? 0 : codes.select(&:blank?).length)`
+      rejectが呼べなくなったりする
 
 
 # Rspec
