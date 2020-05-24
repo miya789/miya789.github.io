@@ -39,6 +39,16 @@ func main() {
 - `ポインタレシーバ`
   - ???
   > これはレシーバの型が、ある型 T への構文 *T があることを意味します。 （なお、 T は *int のようなポインタ自身を取ることはできません）
+
+### Interface
+- Interfaceによりクラスの継承に似た事が可能
+- Interface通りの定義がされているならば，動的に型が判定される
+  - 例: `Error()`の関数が実装された構造体は`error`
+	- 型の形が似ている場合はどうなる？
+
+#### 参考
+- [Go言語における埋め込みによるインタフェースの部分実装パターン](https://qiita.com/tenntenn/items/e04441a40aeb9c31dbaf)
+
 ### Question
 - for i, v := range pow
 
