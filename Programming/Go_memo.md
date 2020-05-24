@@ -42,12 +42,17 @@ func main() {
 
 ### Interface
 - Interfaceによりクラスの継承に似た事が可能
-- Interface通りの定義がされているならば，動的に型が判定される
+- Interface通りの定義がされているならば，動的に型が基礎型？の物として判定される
   - 例: `Error()`の関数が実装された構造体は`error`
 	- 型の形が似ている場合はどうなる？
+- structで定義したerrorは何故戻り値errorで返せるが，型アサーションは通らないのか？
 
 #### 参考
 - [Go言語における埋め込みによるインタフェースの部分実装パターン](https://qiita.com/tenntenn/items/e04441a40aeb9c31dbaf)
+
+### 型
+- 名前の無い型は`型リテラル`
+  - 例: `[]byte`, `*int`, `map[string]string`, `interface{}`
 
 ### Question
 - for i, v := range pow
