@@ -58,5 +58,13 @@ func main() {
 - for i, v := range pow
 
 
+## Error
+### Wrap
+- Go 1.13から，`fmt.Errorf("failed to request: %w", err)` でerrorをwrap可能に
+
+#### 参考
+- [Goの新しいerrors パッケージ xerrors](https://qiita.com/sonatard/items/9c9faf79ac03c20f4ae1)
+- [xerrorsパッケージがWrapメソッドではなく : %w でラップする理由](https://qiita.com/sonatard/items/7b15258fa19f939b1323)
+
 ## 参考
 - (A Tour of Go)[https://go-tour-jp.appspot.com/]
