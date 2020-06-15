@@ -59,6 +59,20 @@ func main() {
 
 
 ## Error
+### Basic
+- エラーは以下の3パターン
+	1. `errors.New()`
+		- 一通りで決まってる
+		  - 恐らく変数を扱えない?
+		- 型としてのハンドリングは無理
+	2. `fmt.Errorf()`
+		- 少し詳細にできる
+			- 変数を受け取れる為?
+		- stackさせたエラーメッセージを作れる
+	3. `custom error struct` 型に応じて対処
+		- 型に応じて対処可能
+- 最上位にて`log.Printf`などで表示
+
 ### Wrap
 - Go 1.13から，`fmt.Errorf("failed to request: %w", err)` でerrorをwrap可能に
 
