@@ -80,5 +80,8 @@ func main() {
 - [Goの新しいerrors パッケージ xerrors](https://qiita.com/sonatard/items/9c9faf79ac03c20f4ae1)
 - [xerrorsパッケージがWrapメソッドではなく : %w でラップする理由](https://qiita.com/sonatard/items/7b15258fa19f939b1323)
 
+### Panic
+- must はエラーを返さずにpanicでプロセスを殺してしまう
+
 ## 参考
 - (A Tour of Go)[https://go-tour-jp.appspot.com/]
