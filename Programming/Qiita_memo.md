@@ -205,6 +205,13 @@ e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 ```
 > メッセージを指定せずにecho.NewHTTPError()を使用することもできます。その場合，ステータスのテキストはエラーメッセージとして使用されます．例えば、"Unauthorized"といった具合です。
 
+まずコードに関して，無名関数がハンドラーとして設定されていますね．
+これは`next echo.HandlerFunc`を受け取って`echo.HandlerFunc`を返す関数らしいです．
+で，どんな関数を返すかというとまたもや無名関数で，どうやら`echo.Context`を引数に`error`を返すよくあるハンドラーを定義しているようです．因みにここでは見て来た様に，関数自体をやり取りしているのでこれだけでは動かないですね．
+更に`// Extract the credentials from HTTP request header and perform a security`の辺りで恐らく認証情報をヘッダーから取り出す動作をするように見えます．
+そしてコメントアウトされていない`echo.NewHTTPError(http.StatusUnauthorized, "Please provide valid credentials")`がエラーを生成して其の場で`error`として返していますね．
+もしコメントアウトされている`next(c)`が元気に動作していれば，引数にとっているこの関数の返すerrorが返されることになるでしょう．
+
 恐らく例にも上がっているように，英語での名称がエラメッセージとして使われるだけの簡素なものということでしょう．
 
 ### Default HTTP Error Handler
