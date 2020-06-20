@@ -26,7 +26,7 @@
 場当たり的にブログのコピペばかりをすると全体像を捉えられず，パッチワークによるキメラコードが生まれるので，まずは公式を頑張って読んでみたいと思います．
 とは言え，間違いがあるかもしれない御戯れコーナーですので，忙しい人は次項目へどうぞ．
 
-公式曰く，よくある使われ方は以下らしいです．[^1]
+公式曰く，よくある使われ方は以下らしいです[^1]．
 
 ```Go
 package main
@@ -270,6 +270,7 @@ func (svr Server) MyErrorHandler(err error, c echo.Context) {
     err = echo.NewHTTPError(http.StatusBadGateway)
   }
 
+  // DefaultHTTPErrorHandler
   svr.echo.DefaultHTTPErrorHandler(err, c)
 }
 ```
@@ -284,8 +285,12 @@ if e, ok := err.(interface{ Unwrap() error }); ok {
 	}
 ```
 - 「(^o^) `Unwrap()`って何です?」「`if err != nil { return err }` で返って来たエラーしかハンドリングしないんだが?」という方は恐らくここは不要の筈だと思います．
+ 
+<details><summary>Wrapとは</summary><div>
 - ここはGo 1.13以降の機能`fmt.Errof("%w", err)`[^3]などでWrapされたエラーから中身を取り出して一番下の中身を取り出しています．
   - 正しい使い方を正直分かっていないですが，私はエラーの起きた箇所を追跡する為にWrapしがちなので，最深層のエラーをこれで取り出してます．
+</div></details>
+<br>
 
 ```Go:example_server.go(switch部分)
 switch err.(type) {
@@ -302,36 +307,28 @@ case MyError3:
   - これにで後は任せて`DefaultHTTPErrorHandler`で良い具合にエラーメッセージなどを作成してもらえます．
 
 
-```Go
+```Go:example_server.go(DefaultHTTPErrorHandler部分)
 svr.echo.DefaultHTTPErrorHandler(err, c)
 ```
 
 - 自分でエラメッセージを生成する必要がなかったので，そっくり其の儘流用します．
   - 一応 `echo.NewHTTPError(http.StatusNotFound, err.Error())` で独自エラーのメッセージを使用出来るらしいです．よく分かりませんが．
-
-<details><summary>折り畳みの中でmarkdownを使う</summary><div>
-####detailsタグとsummaryタグを使うことで実装できます。
-**detailsタグ**で追加情報としたい内容を囲む。
-**summaryタグ**で要約して表示したい文章囲む。
-</div></details>
-<br>
-
-一応頑張ればエラーメッセージも作成できると思いますが，一説によるとエラーから内部の構造を調べられる可能性があるので，エラーメッセージはデフォルトの儘が良いかもしれないです．[^4]
-  - よくある例は，ログインに失敗した時のエラーでアカウントの存在がバレる事例や空いているポートが調べられる事例等だと思います．
+- 一応頑張ればエラーメッセージも作成できると思いますが，一説によるとエラーから内部の構造を調べられる可能性があるので，エラーメッセージはデフォルトの儘が良いかもしれないです[^4]．
+  - よくある例は，「ログインに失敗した時のエラーでアカウントの存在がバレる」や「空いているポートが調べられる」
 
 ## 結論
-以上からめでたく，APIが独自のエラーのハンドリングを行えるようになりました．
-Goを触って数か月のにわかなので間違っている箇所があればご指摘頂けると有難いです．
+以上からめでたく，APIが独自エラーのハンドリングを行えるようになりました．
+(Goを触って数か月のにわかなので間違っている箇所があればご指摘頂けると有難いです．)
 
-同じ400では何を直すべきかハンドリングできず困る場合もあると思います．
-なんで起こっているか分からないパワハラ系上司のAPIを実装しても皆が不幸になるので，少し詳細にしたエラーメッセージを生成すると良いかもしれないですね．
+とはいえ，やはり同じ400では何を直すべきかハンドリングできず困る場合もあると思います．
+**なんで怒っているか分からないパワハラ系上司**のAPIを実装しても皆が不幸になる[^5]ので，セキュリティ的には問題が無い少し詳細な程度のエラーメッセージを生成すると良いかもしれないですね．
 
-## 謝辞
+## 参考
 エラーの作り方に関しては以下の記事にお世話になりました．
 分かり易かったので紹介させていただきます．
 
-## 参考
 [^1]: [Error handling in Echo | Echo is a high performance, extensible, minimalist web framework for Go (Golang).](https://echo.labstack.com/guide/error-handling)
 [^2]: [echoのAPIサーバ実装とエラーハンドリングの落とし穴](https://qiita.com/usk81/items/5f2bcfe06eb83830ee55)
 [^3]: [Go1.13のerrorsにWrapの機能が入ったので勉強がてらまとめる](https://nametake.github.io/posts/2019/10/30/unwrap-interface/)
 [^4]: [9-3. エラーメッセージからの情報暴露](https://www.ipa.go.jp/security/awareness/vendor/programmingv1/b09_03.html)
+[^5]: [キレる上司に憂鬱…「怒っている人」から自分をどう守るか？](https://gentosha-go.com/articles/-/20000)
