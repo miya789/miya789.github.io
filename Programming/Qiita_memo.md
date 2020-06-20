@@ -1,12 +1,11 @@
-# echo APIがGoのオリジナルエラーをハンドリングしてくれたよ
-## 初めに
+# 初めに
 > Qiita…初カキコ…ども…
 > it’a true wolrd．狂ってる？それ、400ね。
 
 と言う訳で，駆け出しエンジニアのすなるQiita記事というものを書いてみたいと思います! 
 (お手柔らかにお願いします……)
 
-## 動機
+# 動機
 エラーのハンドリングを全体でカスタマイズする動機は，大きく分けて以下の2つがあると思われます．
   1. Webページで，独自のエラーページに誘導したい
   2. APIで，独自エラーをハンドリングしたい
@@ -22,7 +21,12 @@
 
 (日本語の解説が少なくてあれだったので自分用(便利な言葉)にも書き残して置きます．)
 
-## 既存の手法
+# デフォルト動作の理解
+<details><summary>**Defaultで呼ばれるエラーハンドラーはこちら**
+場当たり的にブログのコピペばかりをすると全体像を捉えられず，整合性に掛けて無駄の多いパッチワークによるキメラコードが生まれるので，まずは公式を頑張って読んでみたいと思います．
+とは言え，間違いがあるかもしれない御戯れコーナーですので，忙しい人は次項目へどうぞ．</summary><div>
+
+## echoのソースコードを(一部)読んでみた
 場当たり的にブログのコピペばかりをすると全体像を捉えられず，パッチワークによるキメラコードが生まれるので，まずは公式を頑張って読んでみたいと思います．
 とは言え，間違いがあるかもしれない御戯れコーナーですので，忙しい人は次項目へどうぞ．
 
@@ -174,11 +178,92 @@ if ok {
 疲れたのとあまり関係なので残り2パートは省きますが，メッセージを取り出してMap化し，それを基にレスポンスの形式を良い感じにJSON形式にしてくるみたいです，凄いですね．
 (`e.Debag` が一番よく分かりませんでした．デバッガで見てたんですがここで大変なエラーが起きて大変でした．)
 
+## 公式が最大手
+### Error Handling
+公式[^1]にエラーハンドリングについての記述があったので見てみましょう．
+近年流行りのDeepLと協力して日本語に訳しました．
+
+> Echoは、ミドルウェアやハンドラからエラーを返すことで、HTTPのエラー処理を一元化することを提唱しています。エラーハンドラを一元化することで、統一された場所から外部サービスにエラーを記録し、カスタマイズされたHTTPレスポンスをクライアントに送ることができるようになります。
+
+> 標準のエラーを返すこともできますし、echo.*HTTPErrorを返すこともできます。
+
+> 例えば、基本的な 認証ミドルウェアが無効な認証情報を検出した場合、401 - Unauthorized エラーを返し、現在の HTTP リクエストを中止します。
+
+```Go
+e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+  return func(c echo.Context) error {
+    // Extract the credentials from HTTP request header and perform a security
+    // check
+
+    // For invalid credentials
+    return echo.NewHTTPError(http.StatusUnauthorized, "Please provide valid credentials")
+
+    // For valid credentials call next
+    // return next(c)
+  }
+})
+```
+> メッセージを指定せずにecho.NewHTTPError()を使用することもできます。その場合，ステータスのテキストはエラーメッセージとして使用されます．例えば、"Unauthorized"といった具合です。
+
+恐らく例にも上がっているように，英語での名称がエラメッセージとして使われるだけの簡素なものということでしょう．
+
+### Default HTTP Error Handler
+> Echo は、エラーをJSON形式で送信するデフォルトのHTTPエラーハンドラを提供します。
+
+```json
+{
+  "message": "error connecting to redis"
+}
+```
+> 標準エラーの場合、レスポンスは 500 - Internal Server Error として送信されますが、デバッグモードで実行している場合は、元のエラーメッセージが送信されます。errorが*HTTPErrorの場合、レスポンスは提供されたステータスコードとメッセージで送信されます。ロギングがオンになっている場合、エラーメッセージも記録されます。
+
+例にもありましたが，エラメッセージを何も書かないと上の様なJSONの`"message"`のvalueが`“Unauthorized”`などで返って来ると言うことだと思います．一番上の例だと`echo.NewHTTPError(http.StatusUnauthorized, "Please provide valid credentials")`を返しているので，
+
+```json
+{
+  "message": "Please provide valid credentials"
+}
+```
+
+が返って来ます．
+
+### Custom HTTP Error Handler
+> カスタムHTTPエラーハンドラはe.HTTPErrorHandlerを介して設定できます。
+
+> ほとんどの場合、デフォルトのHTTPエラーハンドラで十分です。しかし、異なるタイプのerrorを捕捉し、それに応じてアクションを実行したい場合には、カスタムHTTPエラーハンドラが便利です。また、エラーページやただのJSONレスポンスなど、カスタマイズしたレスポンスをクライアントに送信することもできます。
+
+##### Error Pages
+> 以下のカスタムHTTPエラーハンドラは、異なるタイプのerrorのためのエラーページを表示し、errorをログに記録する方法を示しています。エラーページの名前は <CODE>.html のようにしてください。このプロジェクト https://github.com/AndiDittrich/HttpErrorPages を参考にしてください。
+
+```Go
+func customHTTPErrorHandler(err error, c echo.Context) {
+	code := http.StatusInternalServerError
+	if he, ok := err.(*echo.HTTPError); ok {
+		code = he.Code
+	}
+	errorPage := fmt.Sprintf("%d.html", code)
+	if err := c.File(errorPage); err != nil {
+		c.Logger().Error(err)
+	}
+	c.Logger().Error(err)
+}
+
+e.HTTPErrorHandler = customHTTPErrorHandler
+```
+本稿の趣旨とは逸れますが，これはこれで便利で楽しそうですね．
+
+デフォルトで`InternalServerError`のステータスコードを設定して，もしerrにステータスコードがあれば取り出して反映する．そしてステータスに対応するhtmlファイルを読み込んで来る．最後にロギングするという感じでしょうか．
+
+詳しい説明は挙げられたリポジトリにデモがあるのでWebページを作る人は見てみると良いでしょう．
+
+</div></details>
+<br>
 ## 簡素化した独自のエラーハンドラーの作成
 前項で，凡そどのようにエラーがデフォルトでハンドリングされるのか分かりました．
 では，早速エラーのハンドリングをカスタマイズしてみましょう．
 
 背景として，処理の中で`MyError1`, `MyError2`, `MyError3` があると仮定しましょう．
+また独自のエラーを本当に実装するとコードがQiitaでは読み難いのでエラーハンドラーに焦点を絞っています．
 
 これらに関して`Handler`毎に中で扱うのは大変なので共通して分岐させるようにします．
 **Handlerで拾ったエラーを上に投げたら勝手に良い感じに処理してくれる感じ**ですね．
@@ -207,10 +292,10 @@ func hello(c echo.Context) error {
 }
 
 // MyErrorHandler wraps DefaultHTTPErrorHandler.
-func (svr Server) MyErrorHandler(err error, c echo.Context) {
+func (svr *Server) MyErrorHandler(err error, c echo.Context) {
   // Unwrap error
   if e, ok := err.(interface{ Unwrap() error }); ok {
-		err = e.Unwrap()
+    err = e.Unwrap()
   }
 
   // Switch response
@@ -220,7 +305,7 @@ func (svr Server) MyErrorHandler(err error, c echo.Context) {
     err = echo.NewHTTPError(http.StatusNotFound)
   case MyError2:
   case MyError3:
-    err = echo.NewHTTPError(http.StatusBadGateway)
+    err = echo.NewHTTPError(http.StatusBadRequest)
   }
 
   // DefaultHTTPErrorHandler
@@ -238,7 +323,7 @@ func main() {
   s.e.Use(middleware.Recover())
 
   // HTTPErrorHandler
-	s.e.HTTPErrorHandler = s.MyErrorHandler
+  s.e.HTTPErrorHandler = s.MyErrorHandler
 
   // Routes
   s.e.GET("/", hello)
@@ -255,10 +340,10 @@ func main() {
 
 ```Go:example_server.go(MyErrorHandler部分)
 // MyErrorHandler wraps DefaultHTTPErrorHandler.
-func (svr Server) MyErrorHandler(err error, c echo.Context) {
+func (svr *Server) MyErrorHandler(err error, c echo.Context) {
   // Unwrap error
   if e, ok := err.(interface{ Unwrap() error }); ok {
-		err = e.Unwrap()
+    err = e.Unwrap()
   }
 
   // Switch response
@@ -268,7 +353,7 @@ func (svr Server) MyErrorHandler(err error, c echo.Context) {
     err = echo.NewHTTPError(http.StatusNotFound)
   case MyError2:
   case MyError3:
-    err = echo.NewHTTPError(http.StatusBadGateway)
+    err = echo.NewHTTPError(http.StatusBadRequest)
   }
 
   // DefaultHTTPErrorHandler
@@ -282,14 +367,15 @@ func (svr Server) MyErrorHandler(err error, c echo.Context) {
 
 ```Go:example_server.go(Unwrap部分)
 if e, ok := err.(interface{ Unwrap() error }); ok {
-		err = e.Unwrap()
-	}
+  err = e.Unwrap()
+}
 ```
 - 「(^o^) `Unwrap()`って何です?」「`if err != nil { return err }` で返って来たエラーしかハンドリングしないんだが?」という方は恐らくここは不要の筈だと思います．
  
 <details><summary>Wrapとは</summary><div>
+
 - ここはGo 1.13以降の機能`fmt.Errof("%w", err)`[^3]などでWrapされたエラーから中身を取り出して一番下の中身を取り出しています．
-  - 正しい使い方を正直分かっていないですが，私はエラーの起きた箇所を追跡する為にWrapしがちなので，最深層のエラーをこれで取り出してます．
+-  正しい使い方を正直分かっていないですが，私はエラーの起きた箇所を追跡する為にWrapしがちなので，最深層のエラーをこれで取り出しすのが日課です．これでWrapが実装されていないエラーにも柔軟に対応できますね．
 </div></details>
 <br>
 
@@ -300,7 +386,7 @@ case MyError1:
   err = echo.NewHTTPError(http.StatusNotFound)
 case MyError2:
 case MyError3:
-  err = echo.NewHTTPError(http.StatusBadGateway)
+  err = echo.NewHTTPError(http.StatusBadRequest)
 }
 ```
 - おなじみのエラー解体ショーですね．ここでは，デフォルトで500に介錯されるエラーを所望の`StatusCode`に変換しています．
@@ -312,10 +398,10 @@ case MyError3:
 svr.echo.DefaultHTTPErrorHandler(err, c)
 ```
 
-- 自分でエラメッセージを生成する必要がなかったので，そっくり其の儘流用します．
-  - 一応 `echo.NewHTTPError(http.StatusNotFound, err.Error())` で独自エラーのメッセージを使用出来るらしいです．よく分かりませんが．
+- 自分でエラーメッセージを生成する必要がなかったので，そっくり其の儘流用します．
+  - 一応 `echo.NewHTTPError(http.StatusNotFound, err.Error())` で独自エラーのメッセージを使用できるらしいです．よく分かりませんが．
 - 一応頑張ればエラーメッセージも作成できると思いますが，一説によるとエラーから内部の構造を調べられる可能性があるので，エラーメッセージはデフォルトの儘が良いかもしれないです[^4]．
-  - よくある例は，「ログインに失敗した時のエラーでアカウントの存在がバレる」や「空いているポートが調べられる」
+  - よくある例は，「ログインに失敗した時のエラーでアカウントの存在がバレる」や「空いているポートが調べられる」などですかね．
 
 ## 結論
 以上からめでたく，APIが独自エラーのハンドリングを行えるようになりました．
