@@ -223,12 +223,13 @@ func (svr Server) MyErrorHandler(err error, c echo.Context) {
     err = echo.NewHTTPError(http.StatusBadGateway)
   }
 
+  // DefaultHTTPErrorHandler
   svr.echo.DefaultHTTPErrorHandler(err, c)
 }
 
 func main() {
   // Echo instance
-	svr := new(Server)
+  svr := new(Server)
   e := echo.New()
   svr.e = e
 
@@ -248,7 +249,7 @@ func main() {
 
 ```
 
-これでエラーのハンドリングができる筈です．今回は挨拶関数`hello()`なのでエラーが起きる事は無いですが，ここを変えて動かしてみると良いんじゃないかと思います．
+これでエラーのハンドリングができる筈です．今回は挨拶関数`hello()`なので人間と違ってエラーが起きる事は無いですが，ここを変えて動かしてみると良いんじゃないかと思います．
 
 更に定義した`MyErrorHandler()`に関して取り出してみてみましょう．
 
