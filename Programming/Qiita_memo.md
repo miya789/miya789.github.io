@@ -281,63 +281,63 @@ e.HTTPErrorHandler = customHTTPErrorHandler
 package main
 
 import (
-  "net/http"
+	"net/http"
 
-  "github.com/labstack/echo"
-  "github.com/labstack/echo/middleware"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 type (
-  // Server wraps Echo to customize.
-  Server Struct {
-    echo *echo.Echo
-  }
+	// Server wraps Echo to customize.
+	Server struct {
+		echo *echo.Echo
+	}
 )
 
 // Handler
 func hello(c echo.Context) error {
-  return c.String(http.StatusOK, "Hello, World!")
+	return c.String(http.StatusOK, "Hello, World!")
 }
 
 // MyErrorHandler wraps DefaultHTTPErrorHandler.
 func (svr *Server) MyErrorHandler(err error, c echo.Context) {
-  // Unwrap error
-  if e, ok := err.(interface{ Unwrap() error }); ok {
-    err = e.Unwrap()
-  }
+	// Unwrap error
+	if e, ok := err.(interface{ Unwrap() error }); ok {
+		err = e.Unwrap()
+	}
 
-  // Switch response
-  switch err.(type) {
-  case MyError1:
-    // err = echo.NewHTTPError(http.StatusNotFound, err.Error())
-    err = echo.NewHTTPError(http.StatusNotFound)
-  case MyError2:
-  case MyError3:
-    err = echo.NewHTTPError(http.StatusBadRequest)
-  }
+	// Switch response
+	switch err.(type) {
+	case *MyError1:
+		// err = echo.NewHTTPError(http.StatusNotFound, err.Error())
+		err = echo.NewHTTPError(http.StatusNotFound)
+	case *MyError2:
+	case *MyError3:
+		err = echo.NewHTTPError(http.StatusBadRequest)
+	}
 
-  // DefaultHTTPErrorHandler
-  svr.echo.DefaultHTTPErrorHandler(err, c)
+	// DefaultHTTPErrorHandler
+	svr.echo.DefaultHTTPErrorHandler(err, c)
 }
 
 func main() {
-  // Echo instance
-  svr := new(Server)
-  e := echo.New()
-  svr.e = e
+	// Echo instance
+	svr := new(Server)
+	e := echo.New()
+	svr.echo = e
 
-  // Middleware
-  s.e.Use(middleware.Logger())
-  s.e.Use(middleware.Recover())
+	// Middleware
+	svr.echo.Use(middleware.Logger())
+	svr.echo.Use(middleware.Recover())
 
-  // HTTPErrorHandler
-  s.e.HTTPErrorHandler = s.MyErrorHandler
+	// HTTPErrorHandler
+	svr.echo.HTTPErrorHandler = svr.MyErrorHandler
 
-  // Routes
-  s.e.GET("/", hello)
+	// Routes
+	svr.echo.GET("/", hello)
 
-  // Start server
-  s.e.Logger.Fatal(e.Start(":1323"))
+	// Start server
+	svr.echo.Logger.Fatal(e.Start(":1323"))
 }
 
 ```
@@ -408,6 +408,7 @@ svr.echo.DefaultHTTPErrorHandler(err, c)
 
 - 自分でエラーメッセージを生成する必要がなかったので，そっくり其の儘流用します．
   - 一応 `echo.NewHTTPError(http.StatusNotFound, err.Error())` で独自エラーのメッセージを使用できるらしいです．よく分かりませんが．
+  - `MyErrorHandler`をechoには生やせないのでServerでechoをWrapしています．
 - 一応頑張ればエラーメッセージも作成できると思いますが，一説によるとエラーから内部の構造を調べられる可能性があるので，エラーメッセージはデフォルトの儘が良いかもしれないです[^4]．
   - よくある例は，「ログインに失敗した時のエラーでアカウントの存在がバレる」や「空いているポートが調べられる」などですかね．
 
