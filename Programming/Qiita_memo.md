@@ -289,7 +289,7 @@ import (
 type (
 	// Server wraps Echo to customize.
 	Server struct {
-		echo *echo.Echo
+		e *echo.Echo
 	}
 )
 
@@ -316,27 +316,27 @@ func (svr *Server) MyErrorHandler(err error, c echo.Context) {
 	}
 
 	// DefaultHTTPErrorHandler
-	svr.echo.DefaultHTTPErrorHandler(err, c)
+	svr.e.DefaultHTTPErrorHandler(err, c)
 }
 
 func main() {
 	// Echo instance
 	svr := new(Server)
 	e := echo.New()
-	svr.echo = e
+	svr.e = e
 
 	// Middleware
-	svr.echo.Use(middleware.Logger())
-	svr.echo.Use(middleware.Recover())
+	svr.e.Use(middleware.Logger())
+	svr.e.Use(middleware.Recover())
 
 	// HTTPErrorHandler
-	svr.echo.HTTPErrorHandler = svr.MyErrorHandler
+	svr.e.HTTPErrorHandler = svr.MyErrorHandler
 
 	// Routes
-	svr.echo.GET("/", hello)
+	svr.e.GET("/", getFoo)
 
 	// Start server
-	svr.echo.Logger.Fatal(e.Start(":1323"))
+	svr.e.Logger.Fatal(e.Start(":1323"))
 }
 
 ```
