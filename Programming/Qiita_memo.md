@@ -28,9 +28,6 @@
 とは言え，間違いがあるかもしれない御戯れコーナーですので，忙しい人は次項目へどうぞ．</summary><div>
 
 ## echoのソースコードを(一部)読んでみた
-場当たり的にブログのコピペばかりをすると全体像を捉えられず，パッチワークによるキメラコードが生まれるので，まずは公式を頑張って読んでみたいと思います．
-とは言え，間違いがあるかもしれない御戯れコーナーですので，忙しい人は次項目へどうぞ．
-
 公式曰く，よくある使われ方は以下らしいです[^1]．
 
 ```Go
@@ -268,6 +265,7 @@ e.HTTPErrorHandler = customHTTPErrorHandler
 <br>
 
 # 簡素化した独自のエラーハンドラーの作成
+## サンプル例に独自エラーのハンドラーを使ってみる
 前項で，凡そどのようにエラーがデフォルトでハンドリングされるのか分かりました．
 では，早速エラーのハンドリングをカスタマイズしてみましょう．
 
@@ -413,6 +411,109 @@ svr.echo.DefaultHTTPErrorHandler(err, c)
 - 一応頑張ればエラーメッセージも作成できると思いますが，一説によるとエラーから内部の構造を調べられる可能性があるので，エラーメッセージはデフォルトの儘が良いかもしれないです[^4]．
   - よくある例は，「ログインに失敗した時のエラーでアカウントの存在がバレる」や「空いているポートが調べられる」などですかね．
 
+
+## 物足りない方に
+- こちらに上げております．(https://gist.github.com/miya789/bb8aafdc65b46cd6db5765e5e3d67550)
+
+<details><summary>**コードはこちら**</summary><div>
+- `curl -v "localhost:1323?foo=3 | jq"`のようにリクエストを投げるとエラーを変えて動作を確認できます．(`jq`はJSONレスポンスを整形するので無くても可)
+  1. `{ "message": "Not Found" }`
+  2. `{ "message": "this is MyError2" }`
+  3. `{ "message": "Bad Request" }`
+
+```Go:example_server.go(full)
+package main
+
+import (
+	"net/http"
+
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
+)
+
+type (
+	// Server wraps Echo to customize.
+	Server struct {
+		e *echo.Echo
+	}
+)
+
+// Error
+
+// MyError1 is sample error.
+type MyError1 struct{}
+
+func (e *MyError1) Error() string { return "this is MyError1" }
+
+// MyError2 is sample error.
+type MyError2 struct{}
+
+func (e *MyError2) Error() string { return "this is MyError2" }
+
+// MyError3 is sample error.
+type MyError3 struct{}
+
+func (e *MyError3) Error() string { return "this is MyError3" }
+
+// Handler
+func getFoo(c echo.Context) error {
+	foo := c.QueryParam("foo")
+	switch foo {
+	case "1":
+		return &MyError1{}
+	case "2":
+		return &MyError2{}
+	case "3":
+		return &MyError3{}
+	default:
+		return c.JSON(http.StatusOK, foo)
+	}
+}
+
+// MyErrorHandler wraps DefaultHTTPErrorHandler.
+func (svr *Server) MyErrorHandler(err error, c echo.Context) {
+	// Unwrap error
+	if e, ok := err.(interface{ Unwrap() error }); ok {
+		err = e.Unwrap()
+	}
+
+	// Switch response
+	switch err.(type) {
+	case *MyError1:
+		err = echo.NewHTTPError(http.StatusNotFound)
+	case *MyError2:
+		err = echo.NewHTTPError(http.StatusNotFound, err.Error())
+	case *MyError3:
+		err = echo.NewHTTPError(http.StatusBadRequest)
+	}
+
+	// DefaultHTTPErrorHandler
+	svr.e.DefaultHTTPErrorHandler(err, c)
+}
+
+func main() {
+	// Echo instance
+	svr := new(Server)
+	e := echo.New()
+	svr.e = e
+
+	// Middleware
+	svr.e.Use(middleware.Logger())
+	svr.e.Use(middleware.Recover())
+
+	// HTTPErrorHandler
+	svr.e.HTTPErrorHandler = svr.MyErrorHandler
+
+	// Routes
+	svr.e.GET("/", getFoo)
+
+	// Start server
+	svr.e.Logger.Fatal(e.Start(":1323"))
+}
+
+```
+</div></details>
+<br>
 # 結論
 以上からめでたく，APIが独自エラーのハンドリングを行えるようになりました．
 (Goを触って数か月のにわかなので間違っている箇所があればご指摘頂けると有難いです．)
