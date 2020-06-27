@@ -238,7 +238,7 @@ e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 > ほとんどの場合、デフォルトのHTTPエラーハンドラで十分です。しかし、異なるタイプのerrorを捕捉し、それに応じてアクションを実行したい場合には、カスタムHTTPエラーハンドラが便利です。また、エラーページやただのJSONレスポンスなど、カスタマイズしたレスポンスをクライアントに送信することもできます。
 
 ##### Error Pages
-> 以下のカスタムHTTPエラーハンドラは、異なるタイプのerrorのためのエラーページを表示し、errorをログに記録する方法を示しています。エラーページの名前は <CODE>.html のようにしてください。このプロジェクト https://github.com/AndiDittrich/HttpErrorPages を参考にしてください。
+> 以下のカスタムHTTPエラーハンドラは、異なるタイプのerrorのためのエラーページを表示し、errorをログに記録する方法を示しています。エラーページの名前は\<CODE>.html のようにしてください。このプロジェクト https://github.com/AndiDittrich/HttpErrorPages を参考にしてください。
 
 ```Go
 func customHTTPErrorHandler(err error, c echo.Context) {
