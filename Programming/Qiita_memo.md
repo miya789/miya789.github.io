@@ -300,9 +300,9 @@ func hello(c echo.Context) error {
 
 // MyErrorHandler wraps DefaultHTTPErrorHandler.
 func (svr *Server) MyErrorHandler(err error, c echo.Context) {
-	// Unwrap error
-	if e, ok := err.(interface{ Unwrap() error }); ok {
-		err = e.Unwrap()
+	// Retrieve the wrapped original error
+	for errors.Unwrap(err) != nil {
+		err = errors.Unwrap(err)
 	}
 
 	// Switch response
@@ -348,9 +348,9 @@ func main() {
 ```Go:example_server.go(MyErrorHandler部分)
 // MyErrorHandler wraps DefaultHTTPErrorHandler.
 func (svr *Server) MyErrorHandler(err error, c echo.Context) {
-  // Unwrap error
-  if e, ok := err.(interface{ Unwrap() error }); ok {
-    err = e.Unwrap()
+  // Retrieve the wrapped original error
+  for errors.Unwrap(err) != nil {
+    err = errors.Unwrap(err)
   }
 
   // Switch response
@@ -369,12 +369,13 @@ func (svr *Server) MyErrorHandler(err error, c echo.Context) {
 ```
 
 大きく3パートで構成されます．
-初めのUnwrap部分で一番下のエラーを取り出しswitchで比較できる形にした後，switchで`err`を`HTTPError`に変えてしまい，さら以後にそれを`DefaultHTTPErrorHandler`に処理してもらいます．
+初めのRetrieve部分で一番下のエラーを取り出しswitchで比較できる形にした後，switchで`err`を`HTTPError`に変えてしまい，さら以後にそれを`DefaultHTTPErrorHandler`に処理してもらいます．
 追ってそれぞれについてみてみます．
 
-```Go:example_server.go(Unwrap部分)
-if e, ok := err.(interface{ Unwrap() error }); ok {
-  err = e.Unwrap()
+```Go:example_server.go(Retrieve部分)
+// Retrieve the wrapped original error
+for errors.Unwrap(err) != nil {
+  err = errors.Unwrap(err)
 }
 ```
 - 「(^o^) `Unwrap()`って何です?」「`if err != nil { return err }` で返って来たエラーしかハンドリングしないんだが?」という方は恐らくここは不要の筈だと思います．
@@ -425,6 +426,8 @@ svr.echo.DefaultHTTPErrorHandler(err, c)
 package main
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo"
@@ -455,6 +458,11 @@ type MyError3 struct{}
 
 func (e *MyError3) Error() string { return "this is MyError3" }
 
+// MyError4 is sample error.
+type MyError4 struct{}
+
+func (e *MyError4) Error() string { return "this is MyError4" }
+
 // Handler
 func getFoo(c echo.Context) error {
 	foo := c.QueryParam("foo")
@@ -465,6 +473,8 @@ func getFoo(c echo.Context) error {
 		return &MyError2{}
 	case "3":
 		return &MyError3{}
+	case "4":
+		return fmt.Errorf("this is MyError4_2: %w", fmt.Errorf("this is MyError4: %w", &MyError1{}))
 	default:
 		return c.JSON(http.StatusOK, foo)
 	}
@@ -472,9 +482,9 @@ func getFoo(c echo.Context) error {
 
 // MyErrorHandler wraps DefaultHTTPErrorHandler.
 func (svr *Server) MyErrorHandler(err error, c echo.Context) {
-	// Unwrap error
-	if e, ok := err.(interface{ Unwrap() error }); ok {
-		err = e.Unwrap()
+	// Retrieve the wrapped original error
+	for errors.Unwrap(err) != nil {
+		err = errors.Unwrap(err)
 	}
 
 	// Switch response
@@ -485,6 +495,8 @@ func (svr *Server) MyErrorHandler(err error, c echo.Context) {
 		err = echo.NewHTTPError(http.StatusNotFound, err.Error())
 	case *MyError3:
 		err = echo.NewHTTPError(http.StatusBadRequest)
+	case *MyError4:
+		err = echo.NewHTTPError(http.StatusNotFound, err.Error())
 	}
 
 	// DefaultHTTPErrorHandler
