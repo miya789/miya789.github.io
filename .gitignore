@@ -1,1 +1,5 @@
+# yarn package
 node_modules
+
+# jekyll
+_site
