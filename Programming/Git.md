@@ -21,3 +21,8 @@ git revert -m 1 <commit>
 * | dbc65f4 - add revert commit2
 * | f0b0a91 - add revert commit 1
 ```
+
+### `.gitattributes`
+
+- [.gitattributes で Git LFS の適用をディレクトリごとに変更する](https://mseeeen.msen.jp/override-each-directorys-git-attributes/)
+- [Githubにて、表示される言語情報を、自分で指定する方法](https://qooga.jb-jk.net/wp/how-to-specify-language-on-github/#toc3)
